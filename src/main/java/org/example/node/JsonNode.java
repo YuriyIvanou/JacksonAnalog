@@ -31,4 +31,6 @@ public abstract class JsonNode {
     public double asDouble() {
         return 0;
     }
+
+    public long asLong() {return 0L;}
 }

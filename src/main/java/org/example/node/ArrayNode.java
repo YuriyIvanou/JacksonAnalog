@@ -7,7 +7,7 @@ import java.util.List;
  * Узел для JSON-массивов [ ... ]
  */
 
-public class ArrayNode extends JsonNode {
+public class ArrayNode extends JsonNode  {
 
     private final List<JsonNode> elements = new ArrayList<>();
 
@@ -18,5 +18,9 @@ public class ArrayNode extends JsonNode {
     @Override
     public JsonNode get(int index) {
         return elements.get(index);
+    }
+
+    public int size() {
+        return elements.size();
     }
 }

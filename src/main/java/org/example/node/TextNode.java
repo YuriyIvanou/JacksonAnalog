@@ -32,4 +32,9 @@ public class TextNode extends JsonNode {
     public double asDouble() {
         return Double.parseDouble(value);
     }
+
+    @Override
+    public long asLong() {
+        return Long.parseLong(value);
+    }
 }

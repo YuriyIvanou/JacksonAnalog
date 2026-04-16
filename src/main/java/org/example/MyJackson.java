@@ -2,8 +2,6 @@ package org.example;
 
 import org.example.node.JsonNode;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class MyJackson {
 
 
@@ -11,7 +9,7 @@ public class MyJackson {
 
         JsonTreeParser jtp = new JsonTreeParser();
         JsonNode root = jtp.parse(json);
-        MyObjectMapper myObjectMapper = new MyObjectMapper();
+        AnalogObjectMapper myObjectMapper = new AnalogObjectMapper();
 
         return myObjectMapper.treeToValue(root, clazz);
 

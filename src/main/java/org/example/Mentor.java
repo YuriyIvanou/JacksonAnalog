@@ -1,14 +1,16 @@
 package org.example;
 
 
+import java.util.List;
+
 public class Mentor {
 
     private String name;
     private int age;
     private boolean married;
     private double salary;
-    private Intern intern;
-    //private String[] skills;
+    private List<Intern> interns;
+    private List<String> skills;
 
     public boolean isMarried() {
         return married;
@@ -46,6 +48,6 @@ public class Mentor {
     @Override
     public String toString() {
 
-        return "Mentor [name=" + name + ", age=" + age + ", married=" + married  + ", salary=" + salary+ ", intern=" + intern + "]";
+        return "Mentor [name=" + name + ", age=" + age + ", married=" + married  + ", salary=" + salary+ ", intern=" + interns +  ", skills=" + skills + "]";
     }
 }
