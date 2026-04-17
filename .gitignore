@@ -37,3 +37,24 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# === Java (Compiled files) ===
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# === Build Tools (Maven & Gradle) ===
+target/
+build/
+.gradle/
+.m2/
+out/
+
+# === Log files ===
+*.log
+logs/

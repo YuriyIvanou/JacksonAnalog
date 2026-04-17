@@ -77,8 +77,9 @@ public class AnalogObjectMapper {
     private List<Object> mapArrayNodeToList(ArrayNode arrayNode, Field field) {
 
         List<Object> list = new ArrayList<>();
-
-        // Получаем информацию о Generic типе внутри List<T>
+        //Извлекаем List<Intern>
+        //Если поле имеет дженерик-тип (напр., Map<String, Integer>), метод вернет ParameterizedType
+        //Помогает обойти стирание типов (type erasure) для сигнатуры поля
         Type genericType = field.getGenericType();
 
         if (genericType instanceof ParameterizedType pt) {
@@ -89,10 +90,15 @@ public class AnalogObjectMapper {
                 JsonNode elementNode = arrayNode.get(i);
 
                 if (elementNode instanceof ObjectNode) {
-                    // Рекурсивно десериализуем объект внутри списка
                     list.add(treeToValue(elementNode, listElementClass));
-                } else {
-                    // Обрабатываем простые типы (String, Integer и т.д.)
+                }
+                // TODO добавить List в List
+
+                /*  if (elementNode instanceof ArrayNode) {
+                    list.add(mapArrayNodeToList((ArrayNode) elementNode, field));
+                }*/
+
+                else {
                     list.add(convertSimpleNode(elementNode, listElementClass));
                 }
             }
@@ -102,7 +108,7 @@ public class AnalogObjectMapper {
 
     private Object convertSimpleNode(JsonNode node, Class<?> clazz) {
 
-                return switch (clazz.getSimpleName()) {
+        return switch (clazz.getSimpleName()) {
             case "String" -> node.asText();
             case "Integer", "int" -> node.asInt();
             case "Boolean", "boolean" -> node.asBoolean();
