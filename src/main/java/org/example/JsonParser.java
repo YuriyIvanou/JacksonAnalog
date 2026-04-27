@@ -5,20 +5,17 @@ import org.example.node.JsonNode;
 import org.example.node.ObjectNode;
 import org.example.node.TextNode;
 
-
 /**
  * @author Yury
  * создан с помощью ИИ
  * предназначен для сериализации (преобразования объектов Java в JSON) и десериализации (JSON в объекты Java).
- *
  * создает объект типа JsonNode
  * Парсер использует рекурсивный спуск для обхода строки и построения дерева узлов.
  * Рекурсивный обход: Процесс идет «сверху вниз». Парсер встречает открывающую скобку {,
  * создает ObjectNode и начинает рекурсивно обрабатывать вложенные пары «ключ-значение», пока не закроет объект.
- *
- * */
+ */
 
-public class JsonTreeParser {
+public class JsonParser {
     private int pos = 0;
     private String json;
 
@@ -26,7 +23,6 @@ public class JsonTreeParser {
         this.json = input.trim();
         this.pos = 0;
         return parseValue();
-
     }
 
     private JsonNode parseValue() {

@@ -11,7 +11,7 @@ target/
 *.iws
 *.iml
 *.ipr
-.idea
+.idea/
 
 ### Eclipse ###
 .apt_generated
@@ -49,12 +49,11 @@ build/
 *.rar
 
 # === Build Tools (Maven & Gradle) ===
-target/
-build/
+
 .gradle/
 .m2/
 out/
 
 # === Log files ===
-*.log
+
 logs/

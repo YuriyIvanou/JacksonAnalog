@@ -1,7 +1,6 @@
 package org.example.node;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -11,7 +10,7 @@ import java.util.Map;
 
 public class ObjectNode extends JsonNode {
 
-    private final Map<String, JsonNode> fields = new LinkedHashMap<>();
+    private final Map<String, JsonNode> fields = new HashMap<>();
 
     public void put(String key, JsonNode value) {
         fields.put(key, value);
@@ -21,5 +20,4 @@ public class ObjectNode extends JsonNode {
     public JsonNode get(String field) {
         return fields.get(field);
     }
-
 }

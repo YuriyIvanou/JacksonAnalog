@@ -7,7 +7,7 @@ import java.util.List;
  * Узел для JSON-массивов [ ... ]
  */
 
-public class ArrayNode extends JsonNode  {
+public class ArrayNode extends JsonNode {
 
     private final List<JsonNode> elements = new ArrayList<>();
 

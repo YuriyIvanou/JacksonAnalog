@@ -2,7 +2,7 @@ package org.example.node;
 
 /**
  * Базовый абстрактный класс для всех узлов
- *  Методы для навигации, возвращающие null или пустые значения по умолчанию
+ * Методы для навигации, возвращающие null или пустые значения по умолчанию
  */
 
 public abstract class JsonNode {
@@ -32,5 +32,7 @@ public abstract class JsonNode {
         return 0;
     }
 
-    public long asLong() {return 0L;}
+    public long asLong() {
+        return 0L;
+    }
 }

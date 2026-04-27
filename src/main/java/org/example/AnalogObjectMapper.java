@@ -3,6 +3,7 @@ package org.example;
 import org.example.node.ArrayNode;
 import org.example.node.JsonNode;
 import org.example.node.ObjectNode;
+import org.example.node.TextNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -14,107 +15,112 @@ import java.util.List;
 public class AnalogObjectMapper {
 
     /**
-     * Публичный метод берет данные в формате JsonNode и превращает их в объект Java нужного вам класса
-     * десериализации (JSON в объекты Java)
+     * Публичный метод берет данные в формате JsonNode и превращает (десериализирует) их в объект Java нужного класса
      *
-     * @param jsonNode Структура «ключ — значение»: Данные организуются в виде пар,
-     *                 где ключом является строка, а значением может быть число, строка, массив или другой объект.
+     * @param jsonNode Структура «ключ — значение»: Данные организуются в виде пар, где ключом является строка,
+     *                 а значением может быть число, строка, массив или другой объект.
      * @param clazz    класс запрашиваемого объект Java (POJO)
-     * @return объект Java (POJO)
      */
 
-    public <T> T treeToValue(JsonNode jsonNode, Class<T> clazz) {
-
-        try {
-            return initializeObject(jsonNode, createObjectOfClass(clazz));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+    public <T> T jsonNodeToInstance(JsonNode jsonNode, Class<T> clazz) {
+        return switch (jsonNode) {
+            case ObjectNode objectNode -> convertObjectNode(objectNode, clazz);
+            case TextNode textNode -> (T) convertTextNode(textNode, clazz);
+            case ArrayNode arrayNode -> (T) convertArrayNode(arrayNode, clazz);
+            case null, default ->
+                    throw new IllegalStateException("Неподдерживаемый тип узла: " + jsonNode.getClass().getSimpleName());
+        };
     }
 
-    private <T> T createObjectOfClass(Class<T> clazz) throws RuntimeException {
+    /**
+     * Публичный метод берет данные в формате JsonNode и превращает (десериализирует) их в список объектов Java нужного класса
+     *
+     * @param jsonNode Структура «ключ — значение»: Данные организуются в виде пар, где ключом является строка,
+     *                 а значением может быть число, строка, массив или другой объект.
+     * @param clazz    класс запрашиваемого объект Java (POJO)
+     */
 
-        try {
-            return clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
-            throw new RuntimeException(e);
+    public <T> List<T> jsonNodeToList(JsonNode jsonNode, Class<T> clazz) {
+        if (jsonNode instanceof ArrayNode arrayNode) {
+            return getList(arrayNode, clazz);
         }
-    }
-
-    private <T> T initializeObject(JsonNode jsonNode, T emptyObject) throws IllegalAccessException {
-
-        return mapObjectNode((ObjectNode) jsonNode, emptyObject);
-    }
-
-    private <T> T mapObjectNode(ObjectNode objectNode, T emptyObject) throws IllegalAccessException {
-
-        System.out.println("Start mapObjectNode");
-
-        Class<?> clazz = emptyObject.getClass();
-        Field[] declaredFields = clazz.getDeclaredFields();
-        for (Field fieldOfEmptyObject : declaredFields) {
-
-            fieldOfEmptyObject.setAccessible(true);
-            String fieldName = fieldOfEmptyObject.getName();
-            JsonNode valueOfNode = objectNode.get(fieldName);
-            Object value = convertNodeToValue(valueOfNode, fieldOfEmptyObject);
-            fieldOfEmptyObject.set(emptyObject, value);
-        }
-        return emptyObject;
+        throw new IllegalArgumentException("Unexpected value: " + jsonNode.getClass().getSimpleName());
     }
 
     private Object convertNodeToValue(JsonNode valueOfNode, Field field) {
-
+        Class<?> type = field.getType();
         return switch (valueOfNode) {
-            case null -> null;
-            case ObjectNode objectNode -> treeToValue(valueOfNode, field.getType());
-            case ArrayNode arrayNode -> mapArrayNodeToList(arrayNode, field);
-            default -> convertSimpleNode(valueOfNode, field.getType());
+            case ObjectNode objectNode -> jsonNodeToInstance(objectNode, type);
+            case ArrayNode arrayNode -> convertArrayNode(arrayNode, field);
+            case TextNode textNode -> convertTextNode(textNode, type);
+            default -> throw new IllegalStateException("Unexpected value: " + valueOfNode.getClass().getSimpleName());
         };
     }
 
-    private List<Object> mapArrayNodeToList(ArrayNode arrayNode, Field field) {
+    private <T> List<T> convertArrayNode(ArrayNode arrayNode, Class<T> clazz) {
+        Class<?> elementClass = clazz.componentType();
+        return getList(arrayNode, elementClass);
+    }
 
-        List<Object> list = new ArrayList<>();
-        //Извлекаем List<Intern>
-        //Если поле имеет дженерик-тип (напр., Map<String, Integer>), метод вернет ParameterizedType
-        //Помогает обойти стирание типов (type erasure) для сигнатуры поля
-        Type genericType = field.getGenericType();
+    private <T> List<T> convertArrayNode(ArrayNode arrayNode, Field field) {
+        Type fieldType = field.getGenericType();
+        if (fieldType instanceof ParameterizedType pt) {
+            Class<?> elementClass = (Class<?>) pt.getActualTypeArguments()[0];
+            return getList(arrayNode, elementClass);
+        } else {
+            return getList(arrayNode, Object.class);
+        }
+    }
 
-        if (genericType instanceof ParameterizedType pt) {
-            // Извлекаем класс (например, User.class из List<User>)
-            Class<?> listElementClass = (Class<?>) pt.getActualTypeArguments()[0];
+    private <T> T convertObjectNode(ObjectNode objectNode, Class<T> clazz) {
+        T newObject;
+        try {
+            newObject = clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
+            throw new RuntimeException(("Ошибка создания экземпляра " + clazz.getName()));
+        }
+        Field[] declaredFields = clazz.getDeclaredFields();
+        for (Field emptyField : declaredFields) {
+            emptyField.setAccessible(true);
+            String fieldName = emptyField.getName(); //ключ в map
+            JsonNode nodeValue = objectNode.get(fieldName);//может быть 3-х типов textNode arrayNode objectNode, значение в map
+            if (nodeValue == null) {
+                continue; // Оставляем значение поля по умолчанию null
+            }
+            Object value = convertNodeToValue(nodeValue, emptyField);
+            try {
+                emptyField.set(newObject, value);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return newObject;
+    }
 
-            for (int i = 0; i < arrayNode.size(); i++) {
-                JsonNode elementNode = arrayNode.get(i);
+    private Object convertTextNode(JsonNode node, Class<?> clazz) {
+        return switch (clazz.getSimpleName().toLowerCase()) {
+            case "string" -> node.asText();
+            case "integer", "int" -> node.asInt();
+            case "boolean" -> node.asBoolean();
+            case "double" -> node.asDouble();
+            case "long" -> node.asLong();
+            default -> throw new IllegalStateException("Unexpected value: " + clazz.getSimpleName());
+        };
+    }
 
-                if (elementNode instanceof ObjectNode) {
-                    list.add(treeToValue(elementNode, listElementClass));
-                }
-                // TODO добавить List в List
-
-                /*  if (elementNode instanceof ArrayNode) {
-                    list.add(mapArrayNodeToList((ArrayNode) elementNode, field));
-                }*/
-
-                else {
-                    list.add(convertSimpleNode(elementNode, listElementClass));
-                }
+    private <T> List<T> getList(ArrayNode arrayNode, Class<?> elementClass) {
+        List<T> list = new ArrayList<>();
+        for (int i = 0; i < arrayNode.size(); i++) {
+            JsonNode elementNode = arrayNode.get(i);
+            if (elementNode instanceof ObjectNode) {
+                //noinspection unchecked
+                list.add((T) jsonNodeToInstance(elementNode, elementClass));
+            } else {
+                //noinspection unchecked
+                list.add((T) convertTextNode(elementNode, elementClass));
             }
         }
         return list;
-    }
-
-    private Object convertSimpleNode(JsonNode node, Class<?> clazz) {
-
-        return switch (clazz.getSimpleName()) {
-            case "String" -> node.asText();
-            case "Integer", "int" -> node.asInt();
-            case "Boolean", "boolean" -> node.asBoolean();
-            case "Double", "double" -> node.asDouble();
-            case "Long", "long" -> node.asLong();
-            default -> throw new IllegalStateException("Unexpected value: " + clazz.getSimpleName());
-        };
     }
 }

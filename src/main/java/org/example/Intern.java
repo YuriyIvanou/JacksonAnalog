@@ -6,6 +6,6 @@ public class Intern {
 
     @Override
     public String toString() {
-        return "Intern{" +"name=" + name +"}";
+        return "Intern{" + "name=" + name + "}";
     }
 }

@@ -3,7 +3,6 @@ package org.example;
 import java.util.List;
 
 public class Mentor {
-
     private String name;
     private int age;
     private boolean married;
@@ -13,7 +12,6 @@ public class Mentor {
 
     @Override
     public String toString() {
-
         return "Mentor [name=" + name + ", age=" + age + ", married=" + married + ", salary=" + salary + ", intern=" + interns + ", skills=" + skills + "]";
     }
 }
