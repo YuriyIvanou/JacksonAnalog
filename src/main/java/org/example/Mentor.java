@@ -1,5 +1,6 @@
 package org.example;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Mentor {
@@ -8,10 +9,10 @@ public class Mentor {
     private boolean married;
     private double salary;
     private List<Intern> interns;
-    private List<String> skills;
+    private String[] skills;
 
     @Override
     public String toString() {
-        return "Mentor [name=" + name + ", age=" + age + ", married=" + married + ", salary=" + salary + ", intern=" + interns + ", skills=" + skills + "]";
+        return "Mentor [name=" + name + ", age=" + age + ", married=" + married + ", salary=" + salary + ", intern=" + interns + ", skills=" + Arrays.toString(skills) + "]";
     }
 }

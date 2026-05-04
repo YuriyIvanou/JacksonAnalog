@@ -28,7 +28,7 @@ public class AnalogObjectMapper {
             case TextNode textNode -> (T) convertTextNode(textNode, clazz);
             case ArrayNode arrayNode -> (T) convertArrayNode(arrayNode, clazz);
             case null, default ->
-                    throw new IllegalStateException("Неподдерживаемый тип узла: " + jsonNode.getClass().getSimpleName());
+                    throw new IllegalStateException("unsupported node type: " + jsonNode.getClass().getSimpleName());
         };
     }
 
@@ -62,23 +62,38 @@ public class AnalogObjectMapper {
         return getList(arrayNode, elementClass);
     }
 
-    private <T> List<T> convertArrayNode(ArrayNode arrayNode, Field field) {
+    private Object convertArrayNode(ArrayNode arrayNode, Field field) {
         Type fieldType = field.getGenericType();
+        Class<?> fieldClass = field.getType();
         if (fieldType instanceof ParameterizedType pt) {
             Class<?> elementClass = (Class<?>) pt.getActualTypeArguments()[0];
             return getList(arrayNode, elementClass);
         } else {
-            return getList(arrayNode, Object.class);
+            Class<?> componentType = fieldClass.getComponentType();
+            Object array = java.lang.reflect.Array.newInstance(componentType, arrayNode.size());
+            for (int i = 0; i < arrayNode.size(); i++) {
+                JsonNode elementNode = arrayNode.get(i);
+                Object value;
+                if (elementNode instanceof ObjectNode) {
+                    value = jsonNodeToInstance(elementNode, componentType);
+                } else {
+                    value = convertTextNode(elementNode, componentType);
+                }
+                java.lang.reflect.Array.set(array, i, value);
+            }
+            return array;
         }
     }
 
     private <T> T convertObjectNode(ObjectNode objectNode, Class<T> clazz) {
         T newObject;
         try {
-            newObject = clazz.getDeclaredConstructor().newInstance();
+            var constructor = clazz.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            newObject = constructor.newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new RuntimeException(("Ошибка создания экземпляра " + clazz.getName()));
+            throw new RuntimeException(("instance creation error " + clazz.getName()));
         }
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field emptyField : declaredFields) {
@@ -86,7 +101,7 @@ public class AnalogObjectMapper {
             String fieldName = emptyField.getName(); //ключ в map
             JsonNode nodeValue = objectNode.get(fieldName);//может быть 3-х типов textNode arrayNode objectNode, значение в map
             if (nodeValue == null) {
-                continue; // Оставляем значение поля по умолчанию null
+                continue;
             }
             Object value = convertNodeToValue(nodeValue, emptyField);
             try {

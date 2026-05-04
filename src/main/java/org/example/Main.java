@@ -7,9 +7,30 @@ public class Main {
         String jsonArray = "[\"Yury\", \"Oleg\"]";
         String arrayObjects = "[{ \"name\": \"Yury\" }, { \"name\": \"Oleg\" }] ";
         String value = "2";
+        String json5 = """
+                {
+                  "name": "Nikita",
+                  "age": 28,
+                  "married": false,
+                  "salary": 4500,
+                  "skills": [
+                    "Java",
+                    "Spring",
+                    "Hibernate"
+                  ],
+                  "interns": [
+                    {
+                      "name": "Yury"
+                    },
+                    {
+                      "name": "Oleg"
+                    }
+                  ]
+                }""";
 
         MyJackson myJackson = new MyJackson();
         System.out.println(myJackson.jsonToObject(json3, String.class));
+        System.out.println(myJackson.jsonToObject(json5, Mentor.class));
         System.out.println(myJackson.jsonToObject(json1, Mentor.class));
         System.out.println(myJackson.jsonToObject(value, Integer.class));
         System.out.println(myJackson.jsonToObject(jsonArray, String[].class));
